@@ -48,6 +48,7 @@ public class MessageOutputStreamWrapper {
   public static class JsonOutputStreamWrapper implements MessageOutputStream {
     private final OutputStream stream;
     private final JsonFormat.Printer printer = JsonFormat.printer().includingDefaultValueFields();
+    private boolean hasWrittenMessage = false;
 
     public JsonOutputStreamWrapper(OutputStream stream) {
       Preconditions.checkNotNull(stream);
@@ -57,11 +58,17 @@ public class MessageOutputStreamWrapper {
     @Override
     public void write(Message m) throws IOException {
       Preconditions.checkNotNull(m);
+      String prefix = hasWrittenMessage ? ",\n" : "[\n";
+      stream.write(prefix.getBytes(StandardCharsets.UTF_8));
       stream.write(printer.print(m).getBytes(StandardCharsets.UTF_8));
+      hasWrittenMessage = true;
     }
 
     @Override
     public void close() throws IOException {
+      if (hasWrittenMessage) {
+        stream.write("\n]\n".getBytes(StandardCharsets.UTF_8));
+      }
       stream.close();
     }
   }
